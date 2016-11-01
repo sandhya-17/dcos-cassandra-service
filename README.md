@@ -24,7 +24,7 @@ DC/OS Apache Cassandra provides the following features:
 - Runtime configuration and software updates for high availability
 - Health checks and metrics for monitoring
 - Backup and restore for disaster recovery
-- Cluster wide automation Cleanup and Repair
+- Cluster wide automation cleanup and repair
 
 ## Related Services
 
@@ -34,85 +34,88 @@ DC/OS Apache Cassandra provides the following features:
 
 ## Quick Start
 
-* Step 1. Install a Cassandra cluster using DC/OS CLI:
+1. If you are using open source DC/OS, install a Cassandra cluster with the following command from the DC/OS CLI. If you are using Enterprise DC/OS, you may need to follow additional instructions. See the [Installing Cassandra on Enterprise](#install-enterprise) section for more information.
 
-**Note:** Your cluster must have at least 3 private nodes.
+    **Note:** Your cluster must have at least 3 private nodes.
 
-```
-$ dcos package install cassandra
-```
+    ```
+    $ dcos package install cassandra
+    ```
 
-* Step 2. Once the cluster is installed, retrieve connection information by running the `connection` command:
+1. Once the cluster is installed, retrieve connection information by running the `connection` command:
+    
+    ```
+    $ dcos cassandra connection
+    {
+        "address": [
+            "10.0.2.136:9042",
+            "10.0.2.138:9042",
+            "10.0.2.137:9042"
+        ],
+        "dns": [
+             "node-0.cassandra.mesos:9042",
+             "node-1.cassandra.mesos:9042",
+             "node-2.cassandra.mesos:9042"
+        ]
+    
+    }
+    ```
 
-```
-$ dcos cassandra connection
-{
-    "address": [
-        "10.0.2.136:9042",
-        "10.0.2.138:9042",
-        "10.0.2.137:9042"
-    ],
-    "dns": [
-         "node-0.cassandra.mesos:9042",
-         "node-1.cassandra.mesos:9042",
-         "node-2.cassandra.mesos:9042"
-    ]
+1. [SSH into a DC/OS node](https://docs.mesosphere.com/administration/access-node/sshcluster/):
 
-}
-```
+    ```
+    $ dcos node ssh --master-proxy --leader
+    core@ip-10-0-6-153 ~ $
+    ```
 
-* Step 3. [SSH into a DC/OS node](https://docs.mesosphere.com/administration/access-node/sshcluster/):
+    Now that you are inside your DC/OS cluster, you can connect to your Cassandra cluster directly.
 
-```
-$ dcos node ssh --master-proxy --leader
-core@ip-10-0-6-153 ~ $
-```
+1. Launch a docker container containing `cqlsh` to connect to your cassandra cluster. Use one of the nodes you retrieved from the `connection` command:
 
-Now that you are inside your DC/OS cluster, you can connect to your Cassandra cluster directly.
+    ```
+    core@ip-10-0-6-153 ~ $ docker run -ti cassandra:3.0.7 cqlsh --cqlversion="3.4.0" 10.0.2.136
+    cqlsh>
+    ```
 
-* Step 4. Launch a docker container containing `cqlsh` to connect to your cassandra cluster. Use one of the nodes you retrieved from the `connection` command:
+1. You are now connected to your Cassandra cluster. Create a sample keyspace called `demo`:
+    
+    ```
+    cqlsh> CREATE KEYSPACE demo WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 3 };
+    ```
 
-```
-core@ip-10-0-6-153 ~ $ docker run -ti cassandra:3.0.7 cqlsh --cqlversion="3.4.0" 10.0.2.136
-cqlsh>
-```
+1. Create a sample table called `map` in our `demo` keyspace:
 
-* Step 5. You are now connected to your Cassandra cluster. Create a sample keyspace called `demo`:
+    ```
+    cqlsh> USE demo;CREATE TABLE map (key varchar, value varchar, PRIMARY KEY(key));
+    ```
 
-```
-cqlsh> CREATE KEYSPACE demo WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 3 };
-```
+1. Insert some data in the table:
 
-* Step 6. Create a sample table called `map` in our `demo` keyspace:
+    ```
+    cqlsh> INSERT INTO demo.map(key, value) VALUES('Cassandra', 'Rocks!');
+    cqlsh> INSERT INTO demo.map(key, value) VALUES('StaticInfrastructure', 'BeGone!');
+    cqlsh> INSERT INTO demo.map(key, value) VALUES('Buzz', 'DC/OS is the new black!');
+    ```
 
-```
-cqlsh> USE demo;CREATE TABLE map (key varchar, value varchar, PRIMARY KEY(key));
-```
+1. Query the data back to make sure it persisted correctly:
 
-* Step 7. Insert some data in the table:
-
-```
-cqlsh> INSERT INTO demo.map(key, value) VALUES('Cassandra', 'Rocks!');
-cqlsh> INSERT INTO demo.map(key, value) VALUES('StaticInfrastructure', 'BeGone!');
-cqlsh> INSERT INTO demo.map(key, value) VALUES('Buzz', 'DC/OS is the new black!');
-```
-
-* Step 8. Query the data back to make sure it persisted correctly:
-
-```
-cqlsh> SELECT * FROM demo.map;
-```
+    ```
+    cqlsh> SELECT * FROM demo.map;
+    ```
 
 ## Install and Customize
 
 # About installing Cassandra on Enterprise DC/OS
-  
+
+ <a name="install-enterprise"></a>
  In Enterprise DC/OS `strict` [security mode](https://docs.mesosphere.com/1.8/administration/installing/custom/configuration-parameters/#security), Cassandra requires a service account. In `permissive`, a service account is optional. Only someone with `superuser` permission can create the service account. Refer to [Provisioning Cassandra](https://docs.mesosphere.com/1.8/administration/id-and-access-mgt/service-auth/cass-auth/#give-perms) for instructions.
 
 ### Default Installation
 Prior to installing a default cluster, ensure that your DC/OS cluster has at least 3 DC/OS slaves with 8 Gb of memory, 10 Gb of disk available on each agent. Also, ensure that ports 7000, 7001, 7199, 9042, and 9160 are available.
 
-To start a default cluster, run the following command on the DC/OS CLI. The default installation may not be sufficient for a production deployment, but all cluster operations will work. If you are planning a production deployment with 3 replicas of each value and with local quorum consistency for read and write operations (a very common use case), this configuration is sufficient for development and testing purposes and it may be scaled to a production deployment.
+To start a default cluster, run the following command on the DC/OS CLI. Enterprise DC/OS users must follow additional instructions. See the [About installing Cassandra on Enterprise DC/OS](#install-enterprise) for more information.
+
+The default installation may not be sufficient for a production deployment, but all cluster operations will work. If you are planning a production deployment with 3 replicas of each value and with local quorum consistency for read and write operations (a very common use case), this configuration is sufficient for development and testing purposes and it may be scaled to a production deployment.
 
 ```
 $ dcos package install cassandra
@@ -685,8 +688,7 @@ The service configuration object contains properties that MUST be specified duri
   <tr>
     <td>data_center</td>
     <td>string</td>
-    <td>The identifier of the datacenter that the DC/OS Apache Cassandra service will deploy. This MUST be unique for deployments supporting multiple datacenters. This
-    MAY be identical for multiple deployments on the same DC/OS cluster that support different clusters.</td>
+    <td>The identifier of the datacenter that the DC/OS Apache Cassandra service will deploy. This MUST be unique for deployments supporting multiple datacenters. This MAY be identical for multiple deployments on the same DC/OS cluster that support different clusters.</td>
   </tr>
 
   <tr>
@@ -709,7 +711,7 @@ The service configuration object contains properties that MUST be specified duri
   <tr>
     <td>secret</td>
     <td>string</td>
-    <td>An optional path to the file containing the secret that the service will use to authenticate with the Mesos Master in the DC/OS cluster. This parameter is optional, and should be omitted unless the DC/OS deployment is specifically configured for authentication.</td>
+    <td>An optional path to the file containing the secret that the service will use to authenticate with the Mesos Master in the DC/OS cluster. If you are using open source DC/OS, a secret is not required. If you are using Enterprise DC/OS, consult the [Provisioning Cassandra](https://docs.mesosphere.com/1.8/administration/id-and-access-mgt/service-auth/cass-auth/) documentation to learn whether a secret is required.</td>
   </tr>
 
    <tr>
@@ -750,8 +752,7 @@ The service configuration object contains properties that MUST be specified duri
     <td>external_data_centers</td>
     <td>string</td>
     <td>This specifies the URLs of the external datacenters that contain a cluster the DC/OS Apache Cassandra service will join as a comma separated list.
-    This value should only be included when your deploying a DC/OS Apache Cassandra service instance that will extend an existing cluster. Otherwise, this
-    value should be omitted. If this value is specified, the URLs contained in the comma separated list MUST be resolvable and reachable from the deployed cluster.
+    This value should only be included when your deploying a DC/OS Apache Cassandra service instance that will extend an existing cluster. Otherwise, this value should be omitted. If this value is specified, the URLs contained in the comma separated list MUST be resolvable and reachable from the deployed cluster.
     In practice, they should be identical to the values specified in data_center_url configuration parameter for the instance whose cluster will be extended.
     </td>
   </tr>
@@ -901,7 +902,7 @@ Example executor configuration:
 </table>
 
 ### Task Configuration
-The task configuration object allows you to modify the resources associated with management operations.  Again, These properties should not be modified unless you are trying to install a small cluster in a resource constrained environment.
+The task configuration object allows you to modify the resources associated with management operations. These properties should not be modified unless you are trying to install a small cluster in a resource-constrained environment.
 Example executor configuration:
 ```
 {
@@ -1120,13 +1121,13 @@ The endpoint snitch for the service is always the `GossipPropertyFileSnitch`, bu
   <tr>
     <td>dynamic_snitch_reset_interval_in_ms</td>
     <td>integer</td>
-    <td>Time interval, in ms, to reset all node scores, allowing a bad node to recover.</td>
+    <td>Time interval, in milliseconds, to reset all node scores, allowing a bad node to recover.</td>
   </tr>
 
    <tr>
     <td>dynamic_snitch_update_interval_in_ms</td>
     <td>integer</td>
-    <td>The time interval, in ms, for node score calculation. This is a CPU-intensive operation. Reduce this interval with caution.</td>
+    <td>The time interval, in milliseconds, for node score calculation. This is a CPU-intensive operation. Reduce this interval with caution.</td>
   </tr>
 
 </table>
@@ -1188,8 +1189,8 @@ The following configuration properties are global for all row caches.
 
 ### Authentication and Authorization Configuration
 
-Authentication and authorization may be independently configured.  By default they are set to `AllowAllAuthenticator` and `AllowAllAuthorizer` respectively.  This is necessary to allow initial access to a new cluster.  After initial installation these values may be changed by changing the appropriate environment variables, `CASSANDRA_AUTHENTICATOR` and `CASSANDRA_AUTHORIZER`.
-Further information regarding how to change authentication and authorization of a Cassaandra cluster is available [here](https://docs.datastax.com/en/cassandra/3.0/cassandra/configuration/secureConfigNativeAuth.html) and [here](https://docs.datastax.com/en/cassandra/3.0/cassandra/configuration/secureConfigInternalAuth.html).  The necessary changes to the cassandra.yml file referenced there are accomplished by changing the environment variables already mentioned.
+Authentication and authorization may be independently configured.  By default they are set to `AllowAllAuthenticator` and `AllowAllAuthorizer` respectively. This is necessary to allow initial access to a new cluster. After initial installation these values may be changed by changing the appropriate environment variables, `CASSANDRA_AUTHENTICATOR` and `CASSANDRA_AUTHORIZER`.
+Further information regarding how to change authentication and authorization of a Cassaandra cluster is available [here](https://docs.datastax.com/en/cassandra/3.0/cassandra/configuration/secureConfigNativeAuth.html) and [here](https://docs.datastax.com/en/cassandra/3.0/cassandra/configuration/secureConfigInternalAuth.html). The necessary changes to the cassandra.yml file referenced there are accomplished by changing the environment variables already mentioned.
 
 <table class="table">
 
@@ -1299,29 +1300,11 @@ The response is as below.
 ```
 
 This address JSON array contains a list of valid nodes addresses for nodes in the cluster.
-The dns JSON array contains valid MesosDNS names for the same nodes. For availability
-reasons, it is best to specify multiple nodes in the configuration of the CQL Driver used
-by the application.
+The dns JSON array contains valid MesosDNS names for the same nodes. For availability reasons, it is best to specify multiple nodes in the configuration of the CQL Driver used by the application.
 
-If IP addresses are used, and a Cassandra node is moved to a different IP
-address, the address in the list passed to the cluster configuration of the application
-should be changed. Once the application is connected to the cluster, moving a
-node to a new IP address will not result in a loss of connectivity. The CQL Driver is
-capable of dealing with topology changes. However, the application's
-configuration should be pointed to the new address the next time the application is
-restarted.
+If IP addresses are used, and a Cassandra node is moved to a different IP address, the address in the list passed to the cluster configuration of the application should be changed. Once the application is connected to the cluster, moving a node to a new IP address will not result in a loss of connectivity. The CQL Driver is capable of dealing with topology changes. However, the application's configuration should be pointed to the new address the next time the application is restarted.
 
-If DNS names are used, the DNS name will always resolve to correct IP address of the node.
-This is true, even if the node is moved to a new IP address. However, it is important to
-understand the DNS caching behavior of your application. For a Java application using
-the CQL driver, if a SecurityManager is installed the default behavior is to cache a
-successful DNS lookup forever. Therefore, if a node moves, your application will always
-maintain the original address. If no security manager is installed, the default cache
-behavior falls back to an implementation defined timeout. If a node moves in this case,
-the behavior is generally undefined. If you choose to use DNS to resolve entry points to
-the cluster, the safest method is to set networkaddress.cache.ttl to a reasonable value.
-As with the IP address method, the CQL driver still detect topology changes and reamin
-connected even if a node moves.
+If DNS names are used, the DNS name will always resolve to correct IP address of the node. This is true, even if the node is moved to a new IP address. However, it is important to understand the DNS caching behavior of your application. For a Java application using the CQL driver, if a SecurityManager is installed the default behavior is to cache a successful DNS lookup forever. Therefore, if a node moves, your application will always maintain the original address. If no security manager is installed, the default cache behavior falls back to an implementation defined timeout. If a node moves in this case, the behavior is generally undefined. If you choose to use DNS to resolve entry points to the cluster, the safest method is to set networkaddress.cache.ttl to a reasonable value. As with the IP address method, the CQL driver still detect topology changes and remain connected even if a node moves.
 
 ### Configuring the CQL Driver
 #### Adding the Driver to Your Application
@@ -1539,7 +1522,7 @@ Result:
 </table>
 
 ## Maintenance
-Cassandra supports several maintenance operations including Cleanup, Repair, Backup, and Restore.  In general, attempting to run multiple maintenance operations simultaneously (e.g. Repair and Backup) against a single cluster is not recommended. Likewise, running maintenance operations against multiple Cassandra clusters linked in a multi-datacenter configuration is not recommended.
+Cassandra supports several maintenance operations including cleanup, repair, backup, and restore. In general, attempting to run multiple maintenance operations simultaneously (e.g., repair and backup) against a single cluster is not recommended. Likewise, running maintenance operations against multiple Cassandra clusters linked in a multi-datacenter configuration is not recommended.
 
 <a name="cleanup"></a>
 ### Cleanup
@@ -1812,7 +1795,7 @@ $ export AUTH_TOKEN=uSeR_t0k3n
 
 The `curl` examples in this document assume that an auth token has been stored in an environment variable named `AUTH_TOKEN`.
 
-If your DC/OS Enterprise installation requires encryption, you must also use the `ca-cert` flag when making REST calls. Refer to [Obtaining and passing the DC/OS certificate in cURL requests](https://docs.mesosphere.com/1.9/administration/tls-ssl/#get-dcos-cert) for information on how to use the `--cacert` flag. [If encryption is not required](https://docs.mesosphere.com/1.9/administration/tls-ssl/), you can omit the --cacert flags.
+If you are using Enterprise DC/OS, the security mode of your installation may also require the `--ca-cert` flag when making REST calls. Refer to [Obtaining and passing the DC/OS certificate in cURL requests](/1.9/administration/tls-ssl/#get-dcos-cert) for information on how to use the `--cacert` flag. [If your security mode is `disabled`](/1.9/administration/tls-ssl/), do not use the `--ca-cert` flag.
 
 ## Configuration
 
@@ -1979,6 +1962,6 @@ $ curl -X -H "Authorization: token=$AUTH_TOKEN" <dcos_url>/service/cassandra/v1/
 - Cluster backup and restore can only be performed sequentially across the entire datacenter. While this makes cluster backup and restore time consuming, it also ensures that taking backups and restoring them will not overwhelm the cluster or the network. In the future, DC/OS Apache Cassandra could allow for a user-specified degree of parallelism when taking backups.
 - Cluster restore can only restore a cluster of the same size as, or larger than, the cluster from which the backup was taken.
 - While nodes can be replaced, there is currently no way to shrink the size of the cluster. Future releases will contain decommissions and remove operations.
-- Anti-entropy repair can only be performed sequentially, for the primary range of each node, across and entire datacenter. There are use cases where one might wish to repair an individual node, but running the repair procedure as implemented is always sufficient to repair the cluster.
+- Anti-entropy repair can only be performed sequentially, for the primary range of each node, across an entire datacenter. There are use cases where one might wish to repair an individual node, but running the repair procedure as implemented is always sufficient to repair the cluster.
 - Once a cluster is configured to span multiple datacenters, there is no way to shrink
 the cluster back to a single datacenter.

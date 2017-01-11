@@ -34,13 +34,12 @@
 				"mem": {
 					"type": "integer",
 					"description": "The memory used by the Cassandra service scheduler in Mb.",
-					"default": 2048
+					"default": 512
 				},
 				"heap": {
-					"id": "http://cassandra/docs/mesosphere.com/service/heap",
 					"type": "integer",
 					"description": "The JVM heap used by the Cassandra service scheduler in Mb.",
-					"default": 1024
+					"default": 512
 				},
 				"api_port" : {
 					"type": "integer",
@@ -48,7 +47,6 @@
 					"default": 9000
 				},
 				"placement_constraint": {
-					"id": "http://cassandra/docs/mesosphere.com/service/placement_constraint",
 					"type": "string",
 					"description": "Marathon-style placement constraint for Cassandra nodes. Example: rack_id:LIKE:rack-foo-.*,rack_id:MAX_PER:2",
 					"default": ""
@@ -212,7 +210,6 @@
 					"default": "org.apache.cassandra.dht.Murmur3Partitioner"
 				},
 				"key_cache_save_period": {
-					"id": "http://cassandra/docs/mesosphere.com/cassandra/keyCacheSavePeriod",
 					"type": "integer",
 					"description": "The duration in seconds that keys are saved in cache. Saved caches greatly improve cold-start speeds and has relatively little effect on I/O.",
 					"default": 14400

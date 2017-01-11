@@ -1,6 +1,6 @@
 {
   "packagingVersion": "3.0",
-  "name": "cassandra",
+  "name": "apachecassandra",
   "version": "{{package-version}}",
   "maintainer": "BellLabs",
   "description": "Apache Cassandra running on DC/OS",

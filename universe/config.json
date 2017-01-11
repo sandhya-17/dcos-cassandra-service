@@ -189,7 +189,6 @@
 					"default": 10800000
 				},
 				"hinted_handoff_throttle_in_kb": {
-					"id": "http://cassandra/docs/mesosphere.com/cassandra/hintedHandoffThrottleInKb",
 					"type": "integer",
 					"description": "The maximum throttle per delivery thread in kilobytes per second.",
 					"default": 1024

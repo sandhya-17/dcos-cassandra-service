@@ -1,8 +1,8 @@
 {
-  "packagingVersion": "2.0",
+  "packagingVersion": "3.0",
   "name": "cassandra",
   "version": "{{package-version}}",
-  "maintainer": "support@mesosphere.io",
+  "maintainer": "BellLabs",
   "description": "Apache Cassandra running on DC/OS",
   "selected": true,
   "framework": true,
